@@ -3,6 +3,12 @@ from InquirerPy import prompt
 import os
 import uuid
 from langchain.text_splitter import RecursiveCharacterTextSplitter
+from chromadb.types import Collection
+import chromadb
+from pypdf import PdfReader
+import openai
+import sys
+
 
 def get_path_to_directory_containing_relevant_documents(relevant_directory_paths: List[Dict]):
     """
@@ -49,12 +55,12 @@ def menu_to_ask_for_new_path(relevant_directory_paths: List[Dict]):
     else:
         chat_with_bot()
 
-def gat_path_to_all_files_in_directory(directory_data: Dict):
+def gat_paths_to_all_files_in_directory(directory_data: Dict):
     """
     Given a dictionary representing data about a given directory,
     it returns the path to all the relevant files in that directory
     """
-    path_to_all_files_in_directory = []
+    paths_to_all_files_in_directory = []
     file_extension: str = ""
     # Determine the file extension for the files in the directory
     match directory_data["directory_documents_type"]:
@@ -66,12 +72,12 @@ def gat_path_to_all_files_in_directory(directory_data: Dict):
     for file_name in os.listdir(directory_data.get("directory_path")):
         if file_name.endswith(file_extension):
             file_path = os.path.join(directory_data.get("directory_path"), file_name)
-            path_to_all_files_in_directory.append(file_path)
+            paths_to_all_files_in_directory.append(file_path)
 
-    return path_to_all_files_in_directory
+    return paths_to_all_files_in_directory
 
 
-def vectorize_file_contents_and_store(file_path, collection):
+def vectorize_file_contents_and_store(file_path: str, collection: Collection):
     """Takes in the path to a file and returns a list of embeddings,
     where each embed"""
     text_splitter = RecursiveCharacterTextSplitter(
@@ -85,26 +91,56 @@ def vectorize_file_contents_and_store(file_path, collection):
         with open(file_path, "r", encoding="utf-8") as file:
             file_content = file.read()
 
+    elif file_path.endswith(".pdf"):
+        pdf = PdfReader(file_path)
+        file_content = "".join([page.extract_text(extraction_mode="layout",
+                                                  layout_mode_space_vertically=False) for page in pdf.pages])
+
     file_content_chunks = text_splitter.split_text(file_content)
-    file_chunk_embeddings = []
     for chunk in file_content_chunks:
-        chunk_embedding = {
-            "id": uuid.uuid4(),
-            "document": chunk,
-            "metadata": {"file_path": file_path},
-            "embedding": get_embedding(chunk)
-        }
-        file_chunk_embeddings.append(chunk_embedding)
-
-    return file_chunk_embeddings
-
-
+        collection.add(
+            ids = uuid.uuid4(),
+            documents = chunk,
+            metadatas={"file_path": file_path},
+            embeddings=get_embedding(chunk),
+        )
 
 def get_embedding(chunk: str):
-    pass
-def chat_with_bot():
-    """"""
-    pass
+    openai_client = openai.OpenAI(api_key=sys.argv[1])
+    api_response = openai_client.embeddings.create(
+        model="text-embedding-3-large",
+        input=chunk,
+    )
+    return api_response.data[0].embedding
+
+def chat_with_bot(openai_client: openai.OpenAI, collection: Collection):
+    system_prompt = "You are a helpful AI assistant"
+    all_messages = [{"role": "system", "content": system_prompt}]
+    print_message("All of your relevant documents have been saved and are now retrievable. You can type in '$$$'"
+                  "to end this chat session. How may I help you?",
+                  "Assistant")
+    while True:
+        user_prompt = input("")
+        if user_prompt == "$$$":
+            break
+        else:
+            all_messages.append({"role": "user", "content": user_prompt})
+            print_message(user_prompt, "User")
+            api_response = openai_client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages = all_messages,
+            )
+            all_messages.append({"role": "system", "content": api_response.choices[0].message.content})
+            print_message(api_response.choices[0].message.content, "Assistant")
+
+def print_message(message: str, sender: str):
+    print(f"{sender}: ")
+    print(f"\\tt{message}")
+    print("\n")
+
+
+
+
 all_relevant_document_paths: List[Dict] = []
 
 get_path_to_directory_containing_relevant_documents(all_relevant_document_paths)
