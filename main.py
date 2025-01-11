@@ -36,7 +36,7 @@ def get_path_to_directory_containing_relevant_documents(relevant_directory_paths
     relevant_directory_paths.append({user_response["path_string"] : user_response["path_doc_type"]})
 
 
-def menu_to_ask_for_new_path(relevant_directory_paths: List[Dict]):
+def menu_to_ask_for_new_path(relevant_directory_paths: List[Dict], openai_client: openai.OpenAI, collection: Collection):
     """
     Prompts the user to select if they would like to keep adding
     paths to relevant documents or no
@@ -47,13 +47,13 @@ def menu_to_ask_for_new_path(relevant_directory_paths: List[Dict]):
         "choices": ["Yes", "No"],
         "message": "Do you wish to add a new directory that contains the relevant documents?",
     }
-    questions = [ask_for_new_path]
-    user_response = prompt(questions)
-    if user_response["add_new_path"] == "Yes":
-        get_path_to_directory_containing_relevant_documents(relevant_directory_paths)
-        menu_to_ask_for_new_path(relevant_directory_paths)
-    else:
-        chat_with_bot()
+    while True:
+        questions = [ask_for_new_path]
+        user_response = prompt(questions)
+        if user_response["add_new_path"] == "Yes":
+            get_path_to_directory_containing_relevant_documents(relevant_directory_paths)
+        else:
+            chat_with_bot(openai_client, collection)
 
 def gat_paths_to_all_files_in_directory(directory_data: Dict):
     """
