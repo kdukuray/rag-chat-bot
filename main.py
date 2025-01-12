@@ -13,9 +13,10 @@ import sys
 def get_path_to_directory_containing_relevant_documents(relevant_directory_paths: List[Dict]):
     """
     Prompts the user to get information about the directory containing
-    relevant documents that should be used for retrieval. This includes the path to the
-    directory as well as the file type of the documents in the directory. This information is added to the
-    all_relevant_docs_paths list in the form of a dictionary
+    relevant documents that should be used for retrieval. This includes
+    the path to the directory as well as the file type of the documents
+    in the directory. This information is added to the relevant_directory_paths
+    list in the form of a dictionary
     """
     directory_path = {
         "name": "path_string",
@@ -40,8 +41,9 @@ def get_path_to_directory_containing_relevant_documents(relevant_directory_paths
 
 def menu_to_ask_for_new_path(relevant_directory_paths: List[Dict], openai_client: openai.OpenAI, collection: Collection):
     """
-    Prompts the user to select if they would like to keep adding
-    paths to relevant documents or no
+    Prompts the user to select if they would like to keep adding paths to
+    relevant documents or not. If not, they will continue to the chatbot
+    with the documents they already have.
     """
     ask_for_new_path = {
         "name": "add_new_path",
@@ -67,7 +69,6 @@ def get_paths_to_all_files_in_directory(directory_data: Dict):
     """
     paths_to_all_files_in_directory = []
     file_extension: str = ""
-    # Determine the file extension for the files in the directory
     match directory_data["path_docs_type"]:
         case "txt":
             file_extension = ".txt"
@@ -84,6 +85,11 @@ def get_paths_to_all_files_in_directory(directory_data: Dict):
 
 
 def populate_database_with_all_relevant_files(relevant_directory_paths: List[Dict], collection: Collection):
+    """
+    For each directory in relevant_directory_paths, it extracts the text from all the
+    relevant files, splits them into chunks, embeds each chunk into a vector space and stores
+    all embeddings in the given vector database.
+    """
     print("\n-----Saving Relevant Files in the Database-----")
     for directory_data in relevant_directory_paths:
         all_directory_files = get_paths_to_all_files_in_directory(directory_data)
@@ -94,7 +100,8 @@ def populate_database_with_all_relevant_files(relevant_directory_paths: List[Dic
 
 
 def vectorize_file_contents_and_store(file_path: str, collection: Collection):
-    """Takes in the path to a file, extracts all the text from the file,
+    """
+    Takes in the path to a file, extracts all the text from the file,
     divides the file into chunks, embeds those chunks in a vector space and saves them to a
     vector database
     """
@@ -124,7 +131,9 @@ def vectorize_file_contents_and_store(file_path: str, collection: Collection):
         )
 
 def get_embedding(chunk: str):
-    """Takes in a chunk of text and vectorizes it (makes embeddings out of it)"""
+    """
+    Takes in a chunk of text and embeds it into a vector space.
+    """
     openai_client = openai.OpenAI(api_key=sys.argv[1])
     api_response = openai_client.embeddings.create(
         model="text-embedding-3-large",
@@ -155,6 +164,7 @@ def chat_with_bot(openai_client: openai.OpenAI, collection: Collection):
             print_bot_message(api_response.choices[0].message.content)
 
 def print_bot_message(message: str):
+    """Prints Messages from chatbot. Used for formatting only"""
     print(f"\nAssistant: ")
     print(f"{message}\n")
     print("\nUser:")
@@ -171,7 +181,6 @@ def main():
     print("The Rag Chat Bot has been terminated")
     print("-------------------------------------")
     print("-------------------------------------")
-
 
 if __name__ == "__main__":
     main()
