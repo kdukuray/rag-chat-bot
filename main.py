@@ -39,7 +39,7 @@ def get_path_to_directory_containing_relevant_documents(relevant_directory_paths
                                      })
 
 
-def menu_to_ask_for_new_path(relevant_directory_paths: List[Dict], openai_client: openai.OpenAI, collection: Collection):
+def menu_to_ask_for_new_path(relevant_directory_paths: List[Dict], ai_client: openai.OpenAI, collection: Collection):
     """
     Prompts the user to select if they would like to keep adding paths to
     relevant documents or not. If not, they will continue to the chatbot
@@ -58,7 +58,7 @@ def menu_to_ask_for_new_path(relevant_directory_paths: List[Dict], openai_client
             get_path_to_directory_containing_relevant_documents(relevant_directory_paths)
         else:
             populate_database_with_all_relevant_files(relevant_directory_paths, collection)
-            chat_with_bot(openai_client, collection)
+            chat_with_bot(ai_client, collection)
             break
 
 
@@ -134,14 +134,14 @@ def get_embedding(chunk: str):
     """
     Takes in a chunk of text and embeds it into a vector space.
     """
-    openai_client = openai.OpenAI(api_key=sys.argv[1])
-    api_response = openai_client.embeddings.create(
+    ai_client = openai.OpenAI(api_key=sys.argv[1])
+    api_response = ai_client.embeddings.create(
         model="text-embedding-3-large",
         input=chunk,
     )
     return api_response.data[0].embedding
 
-def chat_with_bot(openai_client: openai.OpenAI, collection: Collection):
+def chat_with_bot(ai_client: openai.OpenAI, collection: Collection):
     """
     Handles chat with bot. Chat is terminated by entering '$$$'
     """
@@ -158,7 +158,7 @@ def chat_with_bot(openai_client: openai.OpenAI, collection: Collection):
             extra_context = (f"Additional Context: {"\n\n".join(relevant_chunks.get("documents")[0])}"
                              f"\nEnd of context.\n")
             all_messages.append({"role": "user", "content": extra_context + user_prompt})
-            api_response = openai_client.chat.completions.create(
+            api_response = ai_client.chat.completions.create(
                 model="gpt-4o-mini",
                 messages = all_messages,
             )
@@ -176,10 +176,10 @@ def print_bot_message(message: str):
 def main():
     db = chromadb.Client()
     collection = db.get_or_create_collection("relevant_documents")
-    openai_client = openai.OpenAI(api_key=sys.argv[1])
+    ai_client = openai.OpenAI(api_key=sys.argv[1])
     relevant_directory_paths = []
     print("\n\n\t\t----Welcome to RAG (Retrieval Augmented Generation) Chat Bot----\n\n")
-    menu_to_ask_for_new_path(relevant_directory_paths, openai_client, collection)
+    menu_to_ask_for_new_path(relevant_directory_paths, ai_client, collection)
     print("-------------------------------------")
     print("-------------------------------------")
     print("The Rag Chat Bot has been terminated")
