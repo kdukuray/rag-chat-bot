@@ -142,7 +142,9 @@ def get_embedding(chunk: str):
     return api_response.data[0].embedding
 
 def chat_with_bot(openai_client: openai.OpenAI, collection: Collection):
-    """Handles chat with bot. Chat is terminated by entering '$$$'"""
+    """
+    Handles chat with bot. Chat is terminated by entering '$$$'
+    """
     system_prompt = "You are a helpful AI assistant"
     all_messages = [{"role": "system", "content": system_prompt}]
     print_bot_message("All of your relevant documents have been saved and are now retrievable. You can type in '$$$'"
@@ -164,7 +166,9 @@ def chat_with_bot(openai_client: openai.OpenAI, collection: Collection):
             print_bot_message(api_response.choices[0].message.content)
 
 def print_bot_message(message: str):
-    """Prints Messages from chatbot. Used for formatting only"""
+    """
+    Prints messages from chatbot. Used for formatting only.
+    """
     print(f"\nAssistant: ")
     print(f"{message}\n")
     print("\nUser:")
