@@ -21,7 +21,7 @@ def get_path_to_directory_containing_relevant_documents(relevant_directory_paths
     directory_path = {
         "name": "path_string",
         "type": "input",
-        "message": "Please enter a path that contains the relevant documents.",
+        "message": "Please enter a path that contains relevant documents.",
     }
 
     directory_documents_type = {
@@ -49,7 +49,7 @@ def menu_to_ask_for_new_path(relevant_directory_paths: List[Dict], ai_client: op
         "name": "add_new_path",
         "type": "list",
         "choices": ["Yes", "No"],
-        "message": "Do you wish to add a new directory that contains the relevant documents?",
+        "message": "Do you wish to add a new directory that contains relevant documents?",
     }
     while True:
         questions = [ask_for_new_path]
@@ -96,7 +96,7 @@ def populate_database_with_all_relevant_files(relevant_directory_paths: List[Dic
         for file_path in all_directory_files:
             vectorize_file_contents_and_store(file_path, collection)
 
-    print("-----Done Saving Relevant Files in the Database-----\n")
+    print("-----Finished Saving Relevant Files in the Database-----\n")
 
 
 def vectorize_file_contents_and_store(file_path: str, collection: Collection):
@@ -147,7 +147,7 @@ def chat_with_bot(ai_client: openai.OpenAI, collection: Collection):
     """
     system_prompt = "You are a helpful AI assistant"
     all_messages = [{"role": "system", "content": system_prompt}]
-    print_bot_message("All of your relevant documents have been saved and are now retrievable. You can type in '$$$'"
+    print_bot_message("All of the relevant documents have been saved and accessible to me. You can type in '$$$'"
                   "to end this chat session. How may I help you?")
     while True:
         user_prompt = input("")
